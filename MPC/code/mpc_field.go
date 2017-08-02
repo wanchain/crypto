@@ -10,6 +10,7 @@
 package mpc
 
 import (
+	"fmt"
 	"math/rand"
 )
 
@@ -23,39 +24,41 @@ func RandPoly(degree int, constant int) polynomial {
 	poly[0] = constant
 
 	for i := 1; i < degree+1; i++ {
-		poly[i] = rand.Int()
+		rand.Seed(int64(i + 1))
+		poly[i] = rand.Intn(100) + 1
 	}
 
 	return poly
 }
 
 // calculate polynomial's evaluation at some point
-func EvaluatePoly(f polynomial, x int) int {
+func EvaluatePoly(f polynomial, x int) uint64 {
 
 	degree := len(f) - 1
 
-	sum := 0
+	sum := uint64(0)
 
 	for i := 0; i < degree+1; i++ {
-		sum += f[i] * pow(x, i)
+		sum += uint64(f[i]) * pow(x, i)
 	}
 
 	return sum
 }
 
-func pow(x int, n int) int {
+func pow(x int, n int) uint64 {
 	if n == 0 {
 		return 1
 	} else {
-		return x * pow(x, n-1)
+		return uint64(x) * pow(x, n-1)
 	}
 }
 
-func evaluateB(x []int) []float32 {
+// calculate the b coefficient in Lagrange's polynomial interpolation algorithm
+func evaluateB(x []int) []float64 {
 
 	k := len(x)
 
-	b := make([]float32, k)
+	b := make([]float64, k)
 
 	for i := 0; i < k; i++ {
 		b[i] = evaluateb(x, i)
@@ -64,19 +67,40 @@ func evaluateB(x []int) []float32 {
 	return b
 }
 
-func evaluateb(x []int, i int) float32 {
+// sub-function for evaluateB
+func evaluateb(x []int, i int) float64 {
 
 	k := len(x)
 
-	sum := float32(0)
+	sum := float64(1)
 
 	for j := 0; j < k; j++ {
 		if j != i {
-			sum += (float32)(x[j]) / (float32)(x[i]-x[j])
+			sum *= float64(x[j]) / (float64(x[j]) - float64(x[i]))
 		} else {
 			continue
 		}
 	}
 
 	return sum
+}
+
+// Lagrange's polynomial interpolation algorithm
+func Lagrange(f []uint64, x []int) int {
+
+	degree := len(x) - 1
+
+	b := evaluateB(x)
+
+	fmt.Println("b", b)
+
+	s := float64(0)
+
+	for i := 0; i < degree+1; i++ {
+
+		s += float64(f[i]) * b[i]
+
+	}
+
+	return int(s)
 }
