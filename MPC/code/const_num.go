@@ -1,8 +1,8 @@
-package mpc
-
 // This file defines the constant num used
 
 // ---secp256k1_N is the order of finite field
+
+package mpc
 
 import "math/big"
 

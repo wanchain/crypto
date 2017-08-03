@@ -1,11 +1,6 @@
 //Copyright 2017 Wanchain crypto team
 
-// This file realize basic mpc functions of finite field. inluding
-
-// ---- Lagrange's polynomial interpolation algorithm
-// ---- MPC protocol for addition operation
-// ---- MPC protocol for multiplication operation
-// ---- MPC protocol for unary inverse operation
+// This file realizes Lagrange's polynomial interpolation algorithm over finite field
 
 package mpc
 
