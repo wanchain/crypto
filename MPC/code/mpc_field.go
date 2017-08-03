@@ -10,55 +10,59 @@
 package mpc
 
 import (
-	"fmt"
+	Rand "crypto/rand"
+	"math/big"
 	"math/rand"
+	//"wanchain/MPC/secp256k1"
+	//"wanchain/MPC/math"
 )
 
-type polynomial []int
-
 // generate a random polynomial, its constant item is nominated
-func RandPoly(degree int, constant int) polynomial {
+func RandPoly(degree int, constant big.Int) polynomial {
 
 	poly := make(polynomial, degree+1)
 
 	poly[0] = constant
 
+	temp := new(big.Int)
+
 	for i := 1; i < degree+1; i++ {
-		rand.Seed(int64(i + 1))
-		poly[i] = rand.Intn(100) + 1
+		source := rand.NewSource(int64(i))
+		r := rand.New(source)
+		temp, _ = Rand.Int(r, secp256k1_N)
+		// in case of polynomial degenerating
+		poly[i] = *temp.Add(temp, bigOne)
 	}
 
 	return poly
 }
 
 // calculate polynomial's evaluation at some point
-func EvaluatePoly(f polynomial, x int) uint64 {
+func EvaluatePoly(f polynomial, x *big.Int) big.Int {
 
 	degree := len(f) - 1
 
-	sum := uint64(0)
+	sum := big.NewInt(0)
+
+	temp1 := big.NewInt(1)
+	temp2 := big.NewInt(1)
 
 	for i := 0; i < degree+1; i++ {
-		sum += uint64(f[i]) * pow(x, i)
+		temp1.Exp(x, big.NewInt(int64(i)), secp256k1_N)
+		temp2.Mul(&f[i], temp1)
+		sum.Add(sum, temp2)
+		sum.Mod(sum, secp256k1_N)
 	}
 
-	return sum
-}
-
-func pow(x int, n int) uint64 {
-	if n == 0 {
-		return 1
-	} else {
-		return uint64(x) * pow(x, n-1)
-	}
+	return *sum
 }
 
 // calculate the b coefficient in Lagrange's polynomial interpolation algorithm
-func evaluateB(x []int) []float64 {
+func evaluateB(x []big.Int) []big.Int {
 
 	k := len(x)
 
-	b := make([]float64, k)
+	b := make([]big.Int, k)
 
 	for i := 0; i < k; i++ {
 		b[i] = evaluateb(x, i)
@@ -68,39 +72,65 @@ func evaluateB(x []int) []float64 {
 }
 
 // sub-function for evaluateB
-func evaluateb(x []int, i int) float64 {
+func evaluateb(x []big.Int, i int) big.Int {
 
 	k := len(x)
 
-	sum := float64(1)
+	sum := big.NewInt(1)
+
+	temp1 := big.NewInt(1)
+	temp2 := big.NewInt(1)
 
 	for j := 0; j < k; j++ {
 		if j != i {
-			sum *= float64(x[j]) / (float64(x[j]) - float64(x[i]))
+			temp1.Sub(&x[j], &x[i])
+			temp1.ModInverse(temp1, secp256k1_N)
+			temp2.Mul(&x[j], temp1)
+			sum.Mul(sum, temp2)
+			sum.Mod(sum, secp256k1_N)
 		} else {
 			continue
 		}
 	}
 
-	return sum
+	return *sum
 }
 
 // Lagrange's polynomial interpolation algorithm
-func Lagrange(f []uint64, x []int) int {
+func Lagrange(f []big.Int, x []big.Int) big.Int {
 
 	degree := len(x) - 1
 
 	b := evaluateB(x)
 
-	fmt.Println("b", b)
+	//fmt.Println("b", b)
 
-	s := float64(0)
+	s := big.NewInt(0)
+
+	temp1 := big.NewInt(1)
 
 	for i := 0; i < degree+1; i++ {
-
-		s += float64(f[i]) * b[i]
-
+		temp1.Mul(&f[i], &b[i])
+		s.Add(s, temp1)
+		s.Mod(s, secp256k1_N)
 	}
 
-	return int(s)
+	return *s
+}
+
+// calculate the inverse of a element over finite field
+func modInverse(a, n *big.Int) (*big.Int, bool) {
+	g := new(big.Int)
+	x := new(big.Int)
+	y := new(big.Int)
+	g.GCD(x, y, a, n)
+	// a n not coprime
+	if g.Cmp(bigOne) != 0 {
+		return bigOne, false
+	}
+	// when x is negative
+	if x.Cmp(bigOne) < 0 {
+		x.Add(x, n)
+	}
+	return x, true
 }
