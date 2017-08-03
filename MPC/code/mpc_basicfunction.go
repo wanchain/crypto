@@ -14,7 +14,7 @@ import (
 // based on mpc protocol for add operation in wanchain white paper
 func Mpc_add(x []big.Int, y []big.Int) []big.Int {
 	if len(x) != len(y) {
-		fmt.Errorf("Input len doesn't match!-----Mpc_add")
+		fmt.Errorf("Input length doesn't match!-----Mpc_add")
 		return nil
 	}
 
