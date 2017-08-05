@@ -17,7 +17,7 @@ func RandPoly(degree int, constant big.Int) polynomial {
 
 	poly := make(polynomial, degree+1)
 
-	poly[0] = constant
+	poly[0].Mod(&constant, secp256k1_N)
 
 	temp := new(big.Int)
 
@@ -36,6 +36,8 @@ func RandPoly(degree int, constant big.Int) polynomial {
 func EvaluatePoly(f polynomial, x *big.Int) big.Int {
 
 	degree := len(f) - 1
+
+	//fmt.Println("degree ", degree)
 
 	sum := big.NewInt(0)
 
