@@ -21,9 +21,12 @@ func RandPoly(degree int, constant big.Int) polynomial {
 
 	temp := new(big.Int)
 
+	source := rand.NewSource(int64(degree))
+
+	r := rand.New(source)
+
 	for i := 1; i < degree+1; i++ {
-		source := rand.NewSource(int64(i))
-		r := rand.New(source)
+
 		temp, _ = Rand.Int(r, secp256k1_N)
 		// in case of polynomial degenerating
 		poly[i] = *temp.Add(temp, bigOne)

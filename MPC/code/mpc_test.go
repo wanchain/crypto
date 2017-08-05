@@ -10,7 +10,7 @@ func TestLagrange(t *testing.T) {
 
 	secret := big.NewInt(10)
 
-	degree := int(10)
+	degree := int(100)
 
 	p := RandPoly(degree, *secret)
 
@@ -84,7 +84,7 @@ func TestMult(t *testing.T) {
 
 	secret2 := big.NewInt(2)
 
-	degree := int(100)
+	degree := int(10)
 
 	len := (degree+1)*2 - 1
 
@@ -115,5 +115,37 @@ func TestMult(t *testing.T) {
 	result := Lagrange(z, x)
 
 	fmt.Println("result ", result)
+
+}
+
+func TestInverse(t *testing.T) {
+
+	secret := big.NewInt(34)
+
+	degree := int(10)
+
+	len := (degree+1)*2 - 1
+
+	p := RandPoly(degree, *secret)
+
+	f := make([]big.Int, len)
+
+	x := make([]big.Int, len)
+
+	for i := 0; i < len; i++ {
+		x[i] = *big.NewInt(int64(i + 1))
+	}
+
+	for i := 0; i < len; i++ {
+		f[i] = EvaluatePoly(p, &x[i])
+	}
+
+	inverse_share := Mpc_inverse(f, x)
+
+	secret_inverse := Lagrange(inverse_share, x)
+
+	secret_inverse.ModInverse(&secret_inverse, secp256k1_N)
+
+	fmt.Println("secret ", secret_inverse)
 
 }
