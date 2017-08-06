@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func TestLagrange(t *testing.T) {
@@ -25,7 +27,6 @@ func TestLagrange(t *testing.T) {
 	}
 
 	//fmt.Println("x ", x)
-
 	for i := 0; i < degree+1; i++ {
 		f[i] = EvaluatePoly(p, &x[i])
 	}
@@ -147,5 +148,21 @@ func TestInverse(t *testing.T) {
 	secret_inverse.ModInverse(&secret_inverse, secp256k1_N)
 
 	fmt.Println("secret ", secret_inverse)
+
+}
+
+func TestEcdsa(t *testing.T) {
+
+	m := []byte{0x22, 0x33}
+
+	d, _ := crypto.GenerateKey()
+
+	r, s := ecdsaSign(m, *d)
+
+	if ecdsaVerify(m, d.PublicKey, r, s) {
+		fmt.Println("signature is valid")
+	} else {
+		fmt.Println("signature is invalid")
+	}
 
 }
