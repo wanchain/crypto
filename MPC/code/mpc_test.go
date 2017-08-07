@@ -166,3 +166,36 @@ func TestEcdsa(t *testing.T) {
 	}
 
 }
+
+func TestMpcEcdsa(t *testing.T) {
+
+	m := []byte{0x22, 0x33}
+
+	d, _ := crypto.GenerateKey()
+
+	degree := int(10)
+
+	len := (degree+1)*2 - 1
+
+	p := RandPoly(degree, *d.D)
+
+	f := make([]big.Int, len)
+
+	x := make([]big.Int, len)
+
+	for i := 0; i < len; i++ {
+		x[i] = *big.NewInt(int64(i + 1))
+	}
+
+	for i := 0; i < len; i++ {
+		f[i] = EvaluatePoly(p, &x[i])
+	}
+
+	r, s := Mpc_ecdsaSign(m, f, x)
+
+	if ecdsaMpcVerify(m, d.PublicKey, r, s) {
+		fmt.Println("signature is valid")
+	} else {
+		fmt.Println("signature is invalid")
+	}
+}
