@@ -140,11 +140,13 @@ func Mpc_ecdsaSign(m []byte, f []big.Int, x []big.Int) (big.Int, big.Int) {
 
 	s_share := make([]big.Int, length)
 
+	ff := make([]big.Int, length)
+
 	for i := 0; i < length; i++ { //dr
-		f[i].Mul(&f[i], &r)
-		f[i].Mod(&f[i], secp256k1_N)
+		ff[i].Mul(&f[i], &r)
+		ff[i].Mod(&ff[i], secp256k1_N)
 	}
-	buffer1 := Mpc_mult(k_inverse, f, x) // k_inverse * dr
+	buffer1 := Mpc_mult(k_inverse, ff, x) // k_inverse * dr
 
 	for i := 0; i < length; i++ { //k_inverse * e
 		k_inverse[i].Mul(&k_inverse[i], e)

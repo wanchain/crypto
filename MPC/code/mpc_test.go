@@ -1,8 +1,11 @@
 package mpc
 
 import (
+	"crypto/ecdsa"
+	Rand "crypto/rand"
 	"fmt"
 	"math/big"
+	"math/rand"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -194,6 +197,70 @@ func TestMpcEcdsa(t *testing.T) {
 	r, s := Mpc_ecdsaSign(m, f, x)
 
 	if ecdsaMpcVerify(m, d.PublicKey, r, s) {
+		fmt.Println("signature is valid")
+	} else {
+		fmt.Println("signature is invalid")
+	}
+}
+
+func TestAll(t *testing.T) {
+
+	m := []byte{0x22, 0x33}
+
+	degree := int(10)
+
+	length := (degree+1)*2 - 1
+
+	source := rand.NewSource(int64(1))
+
+	randReader := rand.New(source)
+
+	x := make([]big.Int, length)
+	for i := 0; i < length; i++ {
+		x[i] = *big.NewInt(int64(i + 1))
+	}
+
+	f := make([]big.Int, length)
+	for i := 0; i < length; i++ {
+		temp, _ := Rand.Int(randReader, secp256k1_N)
+		poly := RandPoly(degree, *temp)
+		for j := 0; j < length; j++ {
+			temp1 := EvaluatePoly(poly, &x[j])
+			f[j].Add(&f[j], &temp1)
+			f[j].Mod(&f[j], secp256k1_N)
+		}
+	}
+
+	ff := Lagrange(f, x)
+	tt := new(ecdsa.PublicKey)
+	tt.X, tt.Y = crypto.S256().ScalarBaseMult(ff.Bytes())
+	fmt.Println("tt.x", *tt.X)
+	fmt.Println("tt.y", *tt.Y)
+
+	r, s := Mpc_ecdsaSign(m, f, x)
+
+	R := make([]ecdsa.PublicKey, length)
+	for i := 0; i < length; i++ {
+		f[i].Mod(&f[i], secp256k1_N)
+		R[i].X, R[i].Y = crypto.S256().ScalarBaseMult(f[i].Bytes())
+		R[i].Curve = crypto.S256()
+	}
+
+	b := evaluateB(x)
+
+	kG := new(ecdsa.PublicKey)
+	kG.X, kG.Y = crypto.S256().ScalarMult(R[0].X, R[0].Y, b[0].Bytes()) //in case the pointer is nil
+	for i := 1; i < length; i++ {
+		buffer1, buffer2 := crypto.S256().ScalarMult(R[i].X, R[i].Y, b[i].Bytes())
+		kG.X, kG.Y = crypto.S256().Add(kG.X, kG.Y, buffer1, buffer2)
+	}
+
+	kG.Curve = crypto.S256()
+
+	fmt.Println("kG.x", *kG.X)
+	fmt.Println("kG.y", *kG.Y)
+
+	if ecdsaMpcVerify(m, *kG, r, s) {
 		fmt.Println("signature is valid")
 	} else {
 		fmt.Println("signature is invalid")
